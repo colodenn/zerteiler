@@ -1,0 +1,17 @@
+{
+  "name": "zerteiler",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "lint": "biome lint . && biome check .",
+    "format": "biome lint --write . && biome format --write . && biome check --write .",
+    "typecheck": "tsc --noEmit --pretty"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@biomejs/biome": "2.1.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
