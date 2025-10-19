@@ -1,17 +1,55 @@
 {
   "name": "zerteiler",
-  "module": "index.ts",
+  "description": "🧱 A simple JSON parser for handling incomplete JSON strings from LLM tool calls.",
+  "version": "0.0.1",
+  "license": "MIT",
   "type": "module",
+  "author": "Cornelius Denninger <cornelius.denninger@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/colodenn/zerteiler.git"
+  },
+  "main": "dist/index.js",
+  "module": "src/index.ts",
   "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
     "lint": "biome lint . && biome check .",
-    "format": "biome lint --write . && biome format --write . && biome check --write .",
-    "typecheck": "tsc --noEmit --pretty"
+    "format": "biome lint --write . && biome format --write . && biome check --write ."
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@biomejs/biome": "2.1.1"
+    "@biomejs/biome": "2.1.1",
+    "tsup": "8.5.0"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  },
+  "keywords": [
+    "json",
+    "parser",
+    "llm",
+    "tool",
+    "call",
+    "incomplete",
+    "json"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
   }
 }
