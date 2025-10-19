@@ -21,7 +21,7 @@ console.log(validJSON)
 
 #### Output:
 
-```
+```json
 { path: `// This is a comment \nconst content = {"test": "value"} `, content: null}
 ```
 
