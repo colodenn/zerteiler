@@ -1,7 +1,6 @@
 # 🧱 Zerteiler: A simple JSON parser for handling incomplete JSON strings from LLM tool calls
 
 ⚠️ The library is yet only experimental and might change over time.
-
 ## 📖 Usage
 
 ```ts
@@ -21,8 +20,8 @@ console.log(validJSON)
 
 #### Output:
 
-```json
-{ path: `// This is a comment \nconst content = {"test": "value"} `, content: null}
+```
+{ "path": `// This is a comment \nconst content = {"test": "value"} `, "content": null}
 ```
 
 ## 📚 Installation
