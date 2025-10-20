@@ -2,9 +2,109 @@ import { z } from "zod";
 import { extractPartialString, parsePrimitive, parseString } from "@/src/utils";
 
 /**
+ * JSON Schema types that match OpenAI's tool parameter format
+ */
+export type JSONSchemaType =
+  | "string"
+  | "number"
+  | "integer"
+  | "boolean"
+  | "object"
+  | "array"
+  | "null";
+
+/**
+ * Base schema properties common to all types
+ */
+export interface BaseSchema {
+  type: JSONSchemaType;
+  description?: string;
+  enum?: (string | number | boolean)[];
+  default?: unknown;
+}
+
+/**
+ * String schema properties
+ */
+export interface StringSchema extends BaseSchema {
+  type: "string";
+  enum?: string[];
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+}
+
+/**
+ * Number/Integer schema properties
+ */
+export interface NumberSchema extends BaseSchema {
+  type: "number" | "integer";
+  enum?: number[];
+  minimum?: number;
+  maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+}
+
+/**
+ * Boolean schema properties
+ */
+export interface BooleanSchema extends BaseSchema {
+  type: "boolean";
+}
+
+/**
+ * Null schema properties
+ */
+export interface NullSchema extends BaseSchema {
+  type: "null";
+}
+
+/**
+ * Array schema properties
+ */
+export interface ArraySchema extends BaseSchema {
+  type: "array";
+  items?: JSONSchema;
+  minItems?: number;
+  maxItems?: number;
+  uniqueItems?: boolean;
+}
+
+/**
+ * Object schema properties with nested property support
+ */
+export interface ObjectSchema extends BaseSchema {
+  type: "object";
+  properties?: {
+    [key: string]: JSONSchema;
+  };
+  required?: string[];
+  additionalProperties?: boolean | JSONSchema;
+}
+
+/**
+ * Complete JSON Schema definition supporting all types and nested properties
+ */
+export type JSONSchema =
+  | StringSchema
+  | NumberSchema
+  | BooleanSchema
+  | NullSchema
+  | ArraySchema
+  | ObjectSchema;
+
+/**
+ * OpenAI Tool Parameters Schema (typically an object at the root)
+ */
+export type ToolParametersSchema = ObjectSchema;
+
+/**
  * Extracts keys from a Zod schema shape
  */
-const getSchemaKeys = (schema: z.ZodTypeAny): string[] => {
+const getSchemaKeys = <TSchema extends ToolParametersSchema>(
+  schema: TSchema,
+): string[] => {
   if (schema instanceof z.ZodObject) {
     return Object.keys(schema.shape);
   }
@@ -19,7 +119,10 @@ const getSchemaKeys = (schema: z.ZodTypeAny): string[] => {
  *
  * @returns Parsed object with extracted values, null for missing values
  */
-export const parse = <T extends z.ZodTypeAny>(input: string, schema: T): z.infer<T> => {
+export const parse = <TSchema extends Record<string, unknown>>(
+  input: string,
+  schema: ToolParametersSchema,
+): TSchema => {
   const keys = getSchemaKeys(schema);
 
   // Initialize result with null values for all expected keys.
@@ -29,7 +132,7 @@ export const parse = <T extends z.ZodTypeAny>(input: string, schema: T): z.infer
 
   // Handle empty or very short strings.
   if (!input || input.length === 0) {
-    return result as z.infer<T>;
+    return result as TSchema;
   }
 
   // Find the opening brace (allow leading whitespace).
@@ -42,12 +145,12 @@ export const parse = <T extends z.ZodTypeAny>(input: string, schema: T): z.infer
 
   // Must start with opening brace.
   if (startIdx >= input.length || input[startIdx] !== "{") {
-    return result as z.infer<T>;
+    return result as TSchema;
   }
 
   try {
     // Try parsing as valid JSON first (for complete JSON).
-    return JSON.parse(input) as z.infer<T>;
+    return JSON.parse(input) as TSchema;
   } catch {
     // Continue with streaming parser for incomplete JSON.
   }
@@ -163,5 +266,5 @@ export const parse = <T extends z.ZodTypeAny>(input: string, schema: T): z.infer
     }
   }
 
-  return result as z.infer<T>;
+  return result as TSchema;
 };
