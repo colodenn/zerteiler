@@ -4,8 +4,8 @@ import { z } from "zod";
 import { parse } from "@/src/index";
 
 const schema = z.object({
-  path: z.string(),
-  content: z.string(),
+  path: z.string().nullable(),
+  content: z.string().nullable(),
 });
 
 describe("incomplete json string", () => {
@@ -46,7 +46,7 @@ describe("incomplete json string", () => {
 
     const result = parse(invalidJsonString, schema);
 
-    expect(result).toEqual({});
+    expect(result).toEqual({ path: null, content: null });
   });
 
   test("partial first path with backslash", () => {

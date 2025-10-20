@@ -1,6 +1,15 @@
-import type { ZodObject } from "zod";
-
+import { z } from "zod";
 import { extractPartialString, parsePrimitive, parseString } from "@/src/utils";
+
+/**
+ * Extracts keys from a Zod schema shape
+ */
+const getSchemaKeys = (schema: z.ZodTypeAny): string[] => {
+  if (schema instanceof z.ZodObject) {
+    return Object.keys(schema.shape);
+  }
+  return [];
+};
 
 /**
  * This functions takes in a unfinished or complete json string and returns a json object.
@@ -10,11 +19,8 @@ import { extractPartialString, parsePrimitive, parseString } from "@/src/utils";
  *
  * @returns Parsed object with extracted values, null for missing values
  */
-export const parse = <T extends Record<string, unknown>>(
-  input: string,
-  schema: ZodObject<any>,
-): T => {
-  const keys = Object.keys(schema.shape);
+export const parse = <T extends z.ZodTypeAny>(input: string, schema: T): z.infer<T> => {
+  const keys = getSchemaKeys(schema);
 
   // Initialize result with null values for all expected keys.
   const result: Record<string, unknown> = Object.fromEntries(
@@ -23,7 +29,7 @@ export const parse = <T extends Record<string, unknown>>(
 
   // Handle empty or very short strings.
   if (!input || input.length === 0) {
-    return result as T;
+    return result as z.infer<T>;
   }
 
   // Find the opening brace (allow leading whitespace).
@@ -36,12 +42,12 @@ export const parse = <T extends Record<string, unknown>>(
 
   // Must start with opening brace.
   if (startIdx >= input.length || input[startIdx] !== "{") {
-    return result as T;
+    return result as z.infer<T>;
   }
 
   try {
     // Try parsing as valid JSON first (for complete JSON).
-    return JSON.parse(input) as T;
+    return JSON.parse(input) as z.infer<T>;
   } catch {
     // Continue with streaming parser for incomplete JSON.
   }
@@ -82,14 +88,8 @@ export const parse = <T extends Record<string, unknown>>(
           break;
         } else {
           // There's content after the quote, so we have a partial key.
-          // If we've already parsed some keys, return what we have.
-          // Otherwise, return empty object to indicate very early parsing stage.
-          const hasValues = Object.values(result).some((v) => v !== null);
-          if (hasValues) {
-            break;
-          } else {
-            return {} as T;
-          }
+          // Return the result with null values for all keys.
+          break;
         }
       }
 
@@ -163,5 +163,5 @@ export const parse = <T extends Record<string, unknown>>(
     }
   }
 
-  return result as T;
+  return result as z.infer<T>;
 };
