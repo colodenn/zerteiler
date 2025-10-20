@@ -1,7 +1,7 @@
 {
   "name": "zerteiler",
   "description": "🧱 A simple JSON parser for handling incomplete JSON strings from LLM tool calls.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
   "author": "Cornelius Denninger <cornelius.denninger@gmail.com>",
