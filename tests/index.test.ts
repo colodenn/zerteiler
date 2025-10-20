@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
 
-import { parse, type Schema } from "@/src/index";
+import { parse, type ToolParametersSchema } from "@/src/index";
 
 const schema = z.object({
   path: z.string().nullable(),
   content: z.string().nullable(),
-}) as unknown as Schema;
+}) as unknown as ToolParametersSchema;
 
 describe("incomplete json string", () => {
   test("empty string", () => {
