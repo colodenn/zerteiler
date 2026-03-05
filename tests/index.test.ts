@@ -3,6 +3,12 @@ import { z } from "zod";
 
 import { parse, type ToolParametersSchema } from "@/src/index";
 
+const primitiveSchema = z.object({
+  count: z.number().nullable(),
+  flag: z.boolean().nullable(),
+  value: z.null(),
+}) as unknown as ToolParametersSchema;
+
 const schema = z.object({
   path: z.string().nullable(),
   content: z.string().nullable(),
@@ -196,5 +202,54 @@ describe("incomplete json string", () => {
       path: `// This is a comment \nconst content = {"test": "value"} `,
       content: `export const test = "help";`,
     });
+  });
+});
+
+describe("primitive values", () => {
+  test("integer value", () => {
+    const result = parse(`{"count": 42, "flag": true, "value": null}`, primitiveSchema);
+    expect(result).toEqual({ count: 42, flag: true, value: null });
+  });
+
+  test("float value", () => {
+    const result = parse(
+      `{"count": 3.14, "flag": false, "value": null}`,
+      primitiveSchema,
+    );
+    expect(result).toEqual({ count: 3.14, flag: false, value: null });
+  });
+
+  test("negative number", () => {
+    const result = parse(`{"count": -1, "flag": true, "value": null}`, primitiveSchema);
+    expect(result).toEqual({ count: -1, flag: true, value: null });
+  });
+
+  test("boolean true", () => {
+    const result = parse(`{"count": null, "flag": true, "value": null}`, primitiveSchema);
+    expect(result).toEqual({ count: null, flag: true, value: null });
+  });
+
+  test("boolean false", () => {
+    const result = parse(
+      `{"count": null, "flag": false, "value": null}`,
+      primitiveSchema,
+    );
+    expect(result).toEqual({ count: null, flag: false, value: null });
+  });
+
+  test("null value", () => {
+    const result = parse(`{"count": null, "flag": null, "value": null}`, primitiveSchema);
+    expect(result).toEqual({ count: null, flag: null, value: null });
+  });
+
+  test("incomplete primitive stops mid-token", () => {
+    // A single digit at end-of-string is a valid number token, so it is parsed.
+    const result = parse(`{"count": 4`, primitiveSchema);
+    expect(result).toEqual({ count: 4, flag: null, value: null });
+  });
+
+  test("partial boolean keyword", () => {
+    const result = parse(`{"flag": tru`, primitiveSchema);
+    expect(result).toEqual({ count: null, flag: null, value: null });
   });
 });

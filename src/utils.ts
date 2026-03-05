@@ -1,4 +1,21 @@
 /**
+ * Advance pos past any whitespace characters.
+ *
+ * @param str - The string to scan.
+ * @param pos - The starting position.
+ *
+ * @returns The new position after all whitespace.
+ */
+export const skipWhitespace = (str: string, pos: number): number => {
+  while (pos < str.length) {
+    const char = str[pos];
+    if (!char || !/\s/.test(char)) break;
+    pos++;
+  }
+  return pos;
+};
+
+/**
  * Parse a complete JSON string value or key.
  *
  * @param str - The string to parse.
@@ -49,7 +66,7 @@ export const parseString = (
         case "u":
           // Unicode escape - need 4 hex digits.
           if (pos + 4 < str.length) {
-            const hex = str.substr(pos + 1, 4);
+            const hex = str.slice(pos + 1, pos + 5);
             value += String.fromCharCode(parseInt(hex, 16));
             pos += 4;
           }
@@ -69,7 +86,7 @@ export const parseString = (
         braceDepth--;
       } else if (char === '"') {
         // Found a quote - check if this is actually the closing quote
-        // by looking at what comes after.s
+        // by looking at what comes after.
         const nextPos = pos + 1;
         if (nextPos >= str.length) {
           // End of string - this is likely the closing quote.
@@ -77,12 +94,7 @@ export const parseString = (
         }
 
         // Skip whitespace after the quote.
-        let checkPos = nextPos;
-        while (checkPos < str.length) {
-          const checkChar = str[checkPos];
-          if (!checkChar || !/\s/.test(checkChar)) break;
-          checkPos++;
-        }
+        const checkPos = skipWhitespace(str, nextPos);
 
         if (checkPos >= str.length) {
           // Only whitespace after quote - it's the closing quote.
@@ -159,6 +171,7 @@ export const extractPartialString = (str: string, startPos: number): string | nu
 };
 
 /**
+ * Parse a primitive JSON value (boolean, null, or number).
  *
  * @param str - The string to parse.
  * @param startPos - The start position.

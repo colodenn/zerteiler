@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { extractPartialString, parsePrimitive, parseString } from "@/src/utils";
+import {
+  extractPartialString,
+  parsePrimitive,
+  parseString,
+  skipWhitespace,
+} from "@/src/utils";
 
 /**
  * JSON Schema types that match OpenAI's tool parameter format
@@ -136,12 +141,7 @@ export const parse = <TSchema extends Record<string, unknown>>(
   }
 
   // Find the opening brace (allow leading whitespace).
-  let startIdx = 0;
-  while (startIdx < input.length) {
-    const char = input[startIdx];
-    if (!char || !/\s/.test(char)) break;
-    startIdx++;
-  }
+  const startIdx = skipWhitespace(input, 0);
 
   // Must start with opening brace.
   if (startIdx >= input.length || input[startIdx] !== "{") {
@@ -161,11 +161,7 @@ export const parse = <TSchema extends Record<string, unknown>>(
 
   while (pos < len) {
     // Skip whitespace.
-    while (pos < len) {
-      const char = input[pos];
-      if (!char || !/\s/.test(char)) break;
-      pos++;
-    }
+    pos = skipWhitespace(input, pos);
 
     if (pos >= len) break;
 
@@ -200,11 +196,7 @@ export const parse = <TSchema extends Record<string, unknown>>(
       pos = keyResult.endPos;
 
       // Skip whitespace after key.
-      while (pos < len) {
-        const char = input[pos];
-        if (!char || !/\s/.test(char)) break;
-        pos++;
-      }
+      pos = skipWhitespace(input, pos);
 
       // Check for colon.
       const colonChar = input[pos];
@@ -216,11 +208,7 @@ export const parse = <TSchema extends Record<string, unknown>>(
       pos++; // Skip colon.
 
       // Skip whitespace after colon.
-      while (pos < len) {
-        const char = input[pos];
-        if (!char || !/\s/.test(char)) break;
-        pos++;
-      }
+      pos = skipWhitespace(input, pos);
 
       if (pos >= len) {
         // Nothing after colon.
