@@ -6,6 +6,8 @@ import {
   skipWhitespace,
 } from "@/src/utils";
 
+const PRIMITIVE_START_RE = /[tfn0-9-]/;
+
 /**
  * JSON Schema types that match OpenAI's tool parameter format
  */
@@ -235,7 +237,7 @@ export const parse = <TSchema extends Record<string, unknown>>(
       } else if (valueStartChar === "{" || valueStartChar === "[") {
         // Object or array value - skip for now, just break.
         break;
-      } else if (/[tfn0-9-]/.test(valueStartChar)) {
+      } else if (PRIMITIVE_START_RE.test(valueStartChar)) {
         // Boolean, null, or number - parse primitive.
         const valueResult = parsePrimitive(input, pos);
         if (valueResult !== null) {

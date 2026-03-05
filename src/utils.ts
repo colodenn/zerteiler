@@ -1,3 +1,8 @@
+const WHITESPACE_RE = /\s/;
+const PRIMITIVE_END_RE = /[,}\s]/;
+const HEX4_RE = /^[0-9a-fA-F]{4}$/;
+const UNICODE_HEX_LEN = 4;
+
 /**
  * Advance pos past any whitespace characters.
  *
@@ -9,7 +14,7 @@
 export const skipWhitespace = (str: string, pos: number): number => {
   while (pos < str.length) {
     const char = str[pos];
-    if (!char || !/\s/.test(char)) break;
+    if (!char || !WHITESPACE_RE.test(char)) break;
     pos++;
   }
   return pos;
@@ -64,11 +69,14 @@ export const parseString = (
           value += "\t";
           break;
         case "u":
-          // Unicode escape - need 4 hex digits.
-          if (pos + 4 < str.length) {
-            const hex = str.slice(pos + 1, pos + 5);
-            value += String.fromCharCode(parseInt(hex, 16));
-            pos += 4;
+          // Unicode escape - need exactly 4 valid hex digits.
+          if (pos + UNICODE_HEX_LEN < str.length) {
+            const hex = str.slice(pos + 1, pos + 1 + UNICODE_HEX_LEN);
+            if (HEX4_RE.test(hex)) {
+              value += String.fromCharCode(parseInt(hex, 16));
+              pos += UNICODE_HEX_LEN;
+            }
+            // else: malformed escape - skip silently (best-effort parser)
           }
           break;
         default:
@@ -151,23 +159,16 @@ export const parseString = (
 export const extractPartialString = (str: string, startPos: number): string | null => {
   if (str[startPos] !== '"') return null;
 
-  let pos = startPos + 1;
+  const pos = startPos + 1;
 
   // If nothing after the opening quote, return null (not an empty string).
   if (pos >= str.length) {
     return null;
   }
 
-  let value = "";
-
-  // For incomplete strings, just extract everything remaining as-is
+  // For incomplete strings, just extract everything remaining as-is.
   // The string is incomplete, so there's no closing quote.
-  while (pos < str.length) {
-    value += str[pos];
-    pos++;
-  }
-
-  return value;
+  return str.slice(pos);
 };
 
 /**
@@ -187,7 +188,7 @@ export const parsePrimitive = (
 
   while (pos < str.length) {
     const char = str[pos];
-    if (!char || /[,}\s]/.test(char)) break;
+    if (!char || PRIMITIVE_END_RE.test(char)) break;
     value += char;
     pos++;
   }

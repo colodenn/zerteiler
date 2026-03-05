@@ -253,3 +253,99 @@ describe("primitive values", () => {
     expect(result).toEqual({ count: null, flag: null, value: null });
   });
 });
+
+describe("escape sequences", () => {
+  test('escaped double quote (\\")', () => {
+    const result = parse(`{"path": "say \\"hi\\"", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: 'say "hi"', content: "ok" });
+  });
+
+  test("escaped backslash (\\\\)", () => {
+    const result = parse(`{"path": "C:\\\\Users", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "C:\\Users", content: "ok" });
+  });
+
+  test("escaped forward slash (\\/)", () => {
+    const result = parse(`{"path": "a\\/b", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "a/b", content: "ok" });
+  });
+
+  test("escaped newline (\\n)", () => {
+    const result = parse(`{"path": "line1\\nline2", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "line1\nline2", content: "ok" });
+  });
+
+  test("escaped carriage return (\\r)", () => {
+    const result = parse(`{"path": "a\\rb", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "a\rb", content: "ok" });
+  });
+
+  test("escaped tab (\\t)", () => {
+    const result = parse(`{"path": "a\\tb", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "a\tb", content: "ok" });
+  });
+
+  test("escaped backspace (\\b)", () => {
+    const result = parse(`{"path": "a\\bb", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "a\bb", content: "ok" });
+  });
+
+  test("escaped form feed (\\f)", () => {
+    const result = parse(`{"path": "a\\fb", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "a\fb", content: "ok" });
+  });
+});
+
+describe("unicode escapes", () => {
+  test("valid \\u0041 decodes to A", () => {
+    const result = parse(`{"path": "\\u0041", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "A", content: "ok" });
+  });
+
+  test("valid \\u00e9 decodes to é", () => {
+    const result = parse(`{"path": "caf\\u00e9", "content": "ok"}`, schema);
+    expect(result).toEqual({ path: "café", content: "ok" });
+  });
+
+  test("malformed \\uZZZZ does not crash", () => {
+    // Invalid hex digits: escape is silently skipped, remaining chars are literal
+    const result = parse(`{"path": "\\uZZZZ"}`, schema);
+    expect(result).toEqual({ path: "ZZZZ", content: null });
+  });
+
+  test("truncated unicode escape at end of input returns partial string", () => {
+    // Input cut after only 3 hex digits - string is incomplete so partial is extracted
+    const result = parse(`{"path": "\\u004`, schema);
+    expect(result.path).not.toBeNull();
+    expect(result.content).toBeNull();
+  });
+});
+
+describe("edge cases", () => {
+  test("whitespace-only input returns all null", () => {
+    const result = parse("   \t\n  ", schema);
+    expect(result).toEqual({ path: null, content: null });
+  });
+
+  test("array value field stays null, preceding fields still parsed", () => {
+    // Streaming parser breaks on '[', so only fields before the array are extracted.
+    // Complete JSON would be parsed by JSON.parse - use an incomplete input to force
+    // the streaming path.
+    const arrSchema = z.object({
+      name: z.string().nullable(),
+      items: z.string().nullable(),
+      extra: z.string().nullable(),
+    }) as unknown as ToolParametersSchema;
+    const result = parse(`{"name": "test", "items": [1, 2, 3], "extra": "foo`, arrSchema);
+    expect(result.name).toBe("test");
+    expect(result.items).toBeNull();
+    expect(result.extra).toBeNull();
+  });
+
+  test("trailing backslash yields partial string up to backslash", () => {
+    // The value string is incomplete (ends mid-escape), extractPartialString is used.
+    const result = parse(`{"path": "test\\`, schema);
+    expect(result.path).toBe("test\\");
+    expect(result.content).toBeNull();
+  });
+});

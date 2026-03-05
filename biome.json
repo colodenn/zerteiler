@@ -10,9 +10,7 @@
     "includes": [
       "./**/*.ts",
       "./**/*.json",
-      "./**/*.tsx",
-      "!.blade/migrations",
-      "!.blade/types.d.ts"
+      "./**/*.tsx"
     ]
   },
   "formatter": {
